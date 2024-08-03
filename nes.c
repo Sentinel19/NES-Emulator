@@ -90,6 +90,8 @@ void execute(){
 				zp_addr = get_byte(cpu.PC);
 				// add contents of X register to value from zero page
 				zp_addr += cpu.X;
+				// handle wrap around if overflow (does not touch lower 8 bits so if no overflow its fine still I believe)
+				zp_addr &= 0x00FF;
 				cpu.cycles--;
 				// we dont want to increment the program counter again here (we already did in the "get_byte()" above)
 				cpu.A = read_byte(zp_addr);
