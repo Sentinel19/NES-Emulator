@@ -15,19 +15,21 @@ int main(){
 	
 
 	// load example instruction into ROM
-	mem.data[0] = 0xAD;
-	mem.data[1] = 0xBB;
-	mem.data[2] = 0xBB;
-	mem.data[0xBBBB] = 0xAD;
+	mem.data[0] = 0xA0;
+	mem.data[1] = 0x01;
+	mem.data[2] = 0xB6;
+	mem.data[3] = 0xBB;
+	mem.data[4] = 0x00;
+	mem.data[0xBC] = 0xAD;
+
 
 
 	
 
 
 
-	// execute 2 clock cycles
-	//unsigned int cycles = 4;
-	cpu.cycles = 4;
+
+	cpu.cycles = 6;
 	execute();
 
 	// output status
@@ -38,7 +40,7 @@ int main(){
 	return 0;
 }
 
-//CPU functions:
+//CPU functions:=======================================================================================================================================================================================================
 
 // reset function
 void reset_cpu(){
@@ -70,72 +72,61 @@ void execute(){
 	while(cpu.cycles > 0){
 
 		// fetch instruction byte (fetching instruction byte always takes 1 cycle)
-		unsigned char instruction = get_byte(cpu.PC);
+		unsigned char instruction = get_byte();
 
 
 
 		switch(instruction){
 
+		// LDA Variants:
 			case LDA_IM: // 2 cycles
 				// load next byte into accumulator register
-				cpu.A = get_byte(cpu.PC);
+				cpu.A = get_byte();
 				// set status register flags
-				LDA_set_status();
+				LD_set_status((cpu.A));
 				break;
 
 			case LDA_ZP: // 3 cycles
 				// in this mode, next byte after opcode is address in zero page
-				zp_addr = read_byte(cpu.PC);
-				cpu.A = get_byte(zp_addr);
+				zp_addr = zero_page_addr();
+				cpu.A = read_byte(zp_addr);
 				// set status register flags
-				LDA_set_status();
+				LD_set_status((cpu.A));
 				break;
 
 			case LDA_ZPX: // 4 cycles
-				// in this mode, accumulator = memory[zeroPageAddress + X]
-				zp_addr = get_byte(cpu.PC);
-				// add contents of X register to value from zero page
-				zp_addr += cpu.X;
+				zp_addr = zero_page_X_addr();
 				// handle "wrap around" if overflow (does not touch lower 8 bits so if no overflow its fine still I believe)
-				zp_addr &= 0xFF;
-				cpu.cycles--;
+				zp_addr &= 0x00FF;
 				// we dont want to increment the program counter again here (we already did in the "get_byte()" above)
 				cpu.A = read_byte(zp_addr);
 				// set status register flags
-				LDA_set_status();
+				LD_set_status((cpu.A));
 				break;
 
 			case LDA_AB: // 4 cycles			
-				abs_addr = get_word(cpu.PC);
+				abs_addr = absolute_addr();
 				cpu.A = read_byte(abs_addr);
 				// set status register flags
-				LDA_set_status();	
+				LD_set_status((cpu.A));	
 				break;
 
 			case LDA_ABX: // 4 cycles (5 if page boundary is crossed...)
-				abs_addr = get_word(cpu.PC);
-				cpu.A = read_byte(abs_addr + (cpu.X));
-				// check if page boundary was crossed
-				if((abs_addr + (cpu.X)) - abs_addr >= 0xFF){
-					cpu.cycles--;
-				}
+				abs_addr = absolute_X_addr();
+				cpu.A = read_byte(abs_addr);
 				// set status register flags
-				LDA_set_status();	
+				LD_set_status((cpu.A));	
 				break;
 
 			case LDA_ABY: // 4 cycles (5 if page boundary is crossed...)
-				abs_addr = get_word(cpu.PC);
-				cpu.A = read_byte(abs_addr + (cpu.Y));
-				// check if page boundary was crossed
-				if((abs_addr + (cpu.Y)) - abs_addr >= 0xFF){
-					cpu.cycles--;
-				}
+				abs_addr = absolute_Y_addr();
+				cpu.A = read_byte(abs_addr);
 				// set status register flags
-				LDA_set_status();	
+				LD_set_status((cpu.A));	
 				break;
 
 			case LDA_INX: // 6 cycles
-				zp_addr = get_byte(cpu.PC);
+				zp_addr = get_byte();
 				zp_addr += cpu.X;
 				cpu.cycles--;
 				eff_addr = read_word(zp_addr);
@@ -145,77 +136,96 @@ void execute(){
 					cpu.cycles--;
 				}
 				// set status register flags
-				LDA_set_status();					
+				LD_set_status((cpu.A));					
 				break;
 
 			case LDA_INY: // 5 cycles (6 if page boundary is crossed...)
-				zp_addr = get_byte(cpu.PC);
+				zp_addr = get_byte();
 				eff_addr = read_word(zp_addr);
 				cpu.A = read_byte(eff_addr + (cpu.Y));
 				// set status register flags
-				LDA_set_status();
+				LD_set_status((cpu.A));
 				break;
 
-			case LDX_IM:
+		// LDX Variants:	
+			case LDX_IM: // 2 cycles
 				// load next byte into accumulator register
-				cpu.X = get_byte(cpu.PC);
+				cpu.X = get_byte();
 				// set status register flags
-				LDX_set_status();
+				LD_set_status((cpu.X));
 				break;
 
-			case LDX_ZP:
+			case LDX_ZP: // 3 cycles
 				// in this mode, next byte after opcode is address in zero page
-				zp_addr = read_byte(cpu.PC);
-				cpu.X = get_byte(zp_addr);
+				zp_addr = zero_page_addr();
+				cpu.X = read_byte(zp_addr);
 				// set status register flags
-				LDX_set_status();
+				LD_set_status((cpu.X));
 				break;
 
-			case LDX_ZPY:
-				// in this mode, accumulator = memory[zeroPageAddress + X]
-				zp_addr = get_byte(cpu.PC);
-				// add contents of X register to value from zero page
-				zp_addr += cpu.Y;
+			case LDX_ZPY: // 4 cycles
+				zp_addr = zero_page_Y_addr();
 				// handle "wrap around" if overflow (does not touch lower 8 bits so if no overflow its fine still I believe)
-				zp_addr &= 0xFF;
-				cpu.cycles--;
+				zp_addr &= 0x00FF;
 				// we dont want to increment the program counter again here (we already did in the "get_byte()" above)
 				cpu.X = read_byte(zp_addr);
 				// set status register flags
-				LDX_set_status();
+				LD_set_status((cpu.X));
 				break;
 
-			case LDX_AB:				
-				break;
-
-			case LDY_IM:
-				// load next byte into accumulator register
-				cpu.Y = get_byte(cpu.PC);
+			case LDX_AB: // 4 cycles
+				abs_addr = absolute_addr();
+				cpu.X = read_byte(abs_addr);
 				// set status register flags
-				LDY_set_status();
+				LD_set_status((cpu.X));	
+				break;
+
+			case LDX_ABY: // 4 cycles (5 if page boundary is crossed...)
+				abs_addr = absolute_Y_addr();
+				cpu.X = read_byte(abs_addr);
+				// set status register flags
+				LD_set_status((cpu.X));	
+				break;								
+
+		// LDY Variants:
+			case LDY_IM: // 2 cycles
+				// load next byte into accumulator register
+				cpu.Y = get_byte();
+				// set status register flags
+				LD_set_status((cpu.Y));
 				// execute one cycle
 				break;
 
-			case LDY_ZP:
+			case LDY_ZP: // 3 cycles
 				// in this mode, next byte after opcode is address in zero page
-				zp_addr = read_byte(cpu.PC);
-				cpu.Y= get_byte(zp_addr);
+				zp_addr = zero_page_addr();
+				cpu.Y= read_byte(zp_addr);
 				// set status register flags
-				LDY_set_status();
+				LD_set_status((cpu.Y));
 				break;
 
 			case LDY_ZPX:
-				// in this mode, accumulator = memory[zeroPageAddress + X]
-				zp_addr = get_byte(cpu.PC);
-				// add contents of X register to value from zero page
-				zp_addr += cpu.X;
+				zp_addr = zero_page_X_addr();
 				// handle "wrap around" if overflow (does not touch lower 8 bits so if no overflow its fine still I believe)
 				zp_addr &= 0xFF;
-				cpu.cycles--;
 				// we dont want to increment the program counter again here (we already did in the "get_byte()" above)
 				cpu.Y = read_byte(zp_addr);
 				// set status register flags
-				LDY_set_status();
+				LD_set_status((cpu.Y));
+				break;
+
+			case LDY_AB: // 4 cycles
+				abs_addr = absolute_addr();
+				cpu.Y = read_byte(abs_addr);
+				// set status register flags
+				LD_set_status((cpu.Y));	
+				break;		
+
+			case LDY_ABX: // 4 cycles (5 if page boundary is crossed...)
+				abs_addr = absolute_X_addr();
+				cpu.Y = read_byte(abs_addr);
+				// set status register flags
+				LD_set_status((cpu.Y));	
 				break;
 
 			case LSR_AC:
@@ -233,8 +243,9 @@ void execute(){
 				cpu.PC++;
 				break;
 
+		// Jump Instructions:
 			case JSR_AB: // (uses Absolute addressing mode)
-				abs_addr = get_word(cpu.PC);
+				abs_addr = get_word();
 				// push address (-1) of the return point onto stack
 				write_word( 0x0100 | (cpu.SP), (cpu.PC - 1));
 				// increment stack pointer
@@ -256,35 +267,17 @@ void execute(){
 	}
 }
 
-// sets the status register for all LDA type instructions
-void LDA_set_status(){
-	if(cpu.A == 0){ // zero flag
+// sets the status register for all load ("LD...") instructions
+void LD_set_status(unsigned char reg){
+	if(reg == 0){ // zero flag
 		cpu.SR |= 0x02;
 	}
-	if((cpu.A >> 7) == 1){ //negative flag
+	if((reg >> 7) == 1){ //negative flag
 		cpu.SR |= 0x80;
 	}
 }
 
-// sets the status register for all LDX type instructions
-void LDX_set_status(){
-	if(cpu.X == 0){ // zero flag
-		cpu.SR |= 0x02;
-	}
-	if((cpu.X >> 7) == 1){ //negative flag
-		cpu.SR |= 0x80;
-	}
-}
 
-// sets the status register for all LDY type instructions
-void LDY_set_status(){
-	if(cpu.Y == 0){ // zero flag
-		cpu.SR |= 0x02;
-	}
-	if((cpu.Y >> 7) == 1){ //negative flag
-		cpu.SR |= 0x80;
-	}
-}
 
 // display registers function
 void output_status(){
@@ -295,7 +288,7 @@ void output_status(){
 	printf("=====================\n\n");
 }
 
-//Memory functions:
+//Memory functions:=======================================================================================================================================================================================================
 
 // initialization function
 void mem_init(){
@@ -304,14 +297,18 @@ void mem_init(){
 	}
 }
 
-// retrieve byte from memory (increments PC)
-unsigned char get_byte(unsigned short addr){
+// General byte and word fetching/reading:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-	unsigned char byte = mem.data[addr];
+
+// retrieve byte from memory (increments PC)
+unsigned char get_byte(){
+
+	unsigned char byte = mem.data[cpu.PC];
 	cpu.cycles--;
 	cpu.PC++;
 	return byte;
 }
+
 
 // reading byte from zero page (not the same as above, does not "execute code" which means PC does not get incremented)
 unsigned char read_byte(unsigned short addr){
@@ -323,22 +320,23 @@ unsigned char read_byte(unsigned short addr){
 // retrieve word (two bytes) from memory (increments PC)
 // retrieves byte at address and byte at next address
 // system and 6502 are little endian (watch for preserving endianness)
-unsigned short get_word(unsigned short addr){
+unsigned short get_word(){
 	
 
 	// 6502 and this VM are little endian (so first read byte is on LSB side)
 	// fetch lower byte
-	unsigned short word = mem.data[addr];
+	unsigned short word = mem.data[cpu.PC];
 	cpu.PC++;
 	cpu.cycles--;
 	// fetch higher byte
-	word |= (mem.data[addr + 1] << 8);
+	word |= (mem.data[cpu.PC] << 8);
 	cpu.PC++;
 	cpu.cycles--;
 	return word;
 
 }
 
+// reads word from zero page (does not "execute code" which means it does not increment the program counter)
 unsigned short read_word(unsigned short addr){
 
 	// 6502 and this VM are little endian (so first read byte is on LSB side)
@@ -351,6 +349,65 @@ unsigned short read_word(unsigned short addr){
 	return word;
 }
 
+
+// fetching/reading in address modes:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// done because many instructions use zero page addressing mode
+unsigned short zero_page_addr(){
+	return get_byte();
+}
+
+// done because many instructions use zerp page with X offset addressing mode
+unsigned short zero_page_X_addr(){
+	// in this mode, accumulator = memory[zeroPageAddress + X]
+	unsigned char zp_addr = get_byte();
+	// add contents of X register to value from zero page
+	zp_addr += cpu.X;
+	cpu.cycles--;
+	return zp_addr;
+}
+
+
+// done because many instructions use zerp page with Y offset addressing mode
+unsigned short zero_page_Y_addr(){
+	// in this mode, accumulator = memory[zeroPageAddress + X]
+	unsigned char zp_addr = get_byte();
+	// add contents of X register to value from zero page
+	zp_addr += cpu.Y;
+	cpu.cycles--;
+	return zp_addr;
+}
+
+// done because many instructions use absolute addressing mode
+unsigned short absolute_addr(){
+	return get_word();
+}
+
+// done because many instructions use absolute with X offset addressing mode
+unsigned short absolute_X_addr(){
+	unsigned short abs_addr = get_word();
+	// check if page boundary was crossed
+	if((abs_addr + (cpu.X)) - abs_addr >= 0xFF){
+		cpu.cycles--;
+	}
+	return (abs_addr + (cpu.X));
+}
+
+// done because many instructions use absolute with Y offset addressing mode
+unsigned short absolute_Y_addr(){
+	unsigned short abs_addr = get_word();
+	// check if page boundary was crossed
+	if((abs_addr + (cpu.Y)) - abs_addr >= 0xFF){
+		cpu.cycles--;
+	}
+	return (abs_addr + (cpu.Y));
+}
+
+
+
+// General byte and word writing:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// simply writes a word to memory
 void write_word(unsigned short addr, unsigned char data){
 	// remember this is little endian...
 	mem.data[addr] = data & 0xFF;
@@ -358,4 +415,3 @@ void write_word(unsigned short addr, unsigned char data){
 	mem.data[addr + 1] = (data >> 8);
 	cpu.cycles--;
 }
-

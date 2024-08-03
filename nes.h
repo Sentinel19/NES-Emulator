@@ -19,11 +19,14 @@
 #define LDX_ZP 0xA6 // zero page
 #define LDX_ZPY 0xB6 // zero page Y
 #define LDX_AB 0xAE // absolute
+#define LDX_ABY 0xBE // absolute Y
 
 // Load Y             
 #define LDY_IM 0xA0 // immediate
 #define LDY_ZP 0xA4 // zero page
 #define LDY_ZPX 0xB4 // zero page X
+#define LDY_AB 0xAC // absolute
+#define LDY_ABX 0xBC // absolute X
 
 // Logical Shift Right    
 #define LSR_AC 0x4A    // accumulator
@@ -57,16 +60,34 @@ struct MEM {
 
 };
 
-// CPU functions
+//CPU functions:=======================================================================================================================================================================================================
 void reset_cpu(void);
 void output_status(void);
-void execute();
+void execute(void);
+void LDA_set_status(void);
 
 
-// ROM functions
+
+//Memory functions:=======================================================================================================================================================================================================
+
 void mem_init(void);
-unsigned char get_byte(unsigned short addr);
+
+// General byte and word fetching/reading:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+unsigned char get_byte(void);
 unsigned char read_byte(unsigned short addr);
-unsigned short get_word(unsigned short addr);
+unsigned short get_word(void);
 unsigned short read_word(unsigned short addr);
+
+// fetching/reading in address modes:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+unsigned short zero_page_addr(void);
+unsigned short zero_page_X_addr(void);
+unsigned short zero_page_Y_addr(void);
+unsigned short absolute_addr(void);
+unsigned short absolute_X_addr(void);
+unsigned short absolute_Y_addr(void);
+
+// General byte and word writing:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 void write_word(unsigned short addr, unsigned char data);
