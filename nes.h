@@ -7,6 +7,7 @@
 //  Load Accumulator   
 #define LDA_IM 0xA9 // immediate
 #define LDA_ZP 0xA5 // zero page
+#define LDA_ZPX 0xB5 // zero page X
 
 // Load X              
 #define LDX_IM 0xA2 // immediate
@@ -18,6 +19,9 @@
 
 // Logical Shift Right    
 #define LSR_AC 0x4A    // Accumulator
+
+// Jump to Subroutine
+#define JSR_AB 0x99// Absolute
 
 
 // CPU constants
@@ -34,6 +38,9 @@ struct CPU {
 	unsigned char SR; // status register
 	unsigned char SP; // stack pointer
 
+	// to run ammount of cycles
+	unsigned int cycles;
+
 };
 
 struct MEM {
@@ -45,10 +52,11 @@ struct MEM {
 // CPU functions
 void reset_cpu(void);
 void output_status(void);
-void execute(unsigned int cycles);
+void execute();
 
 
 // ROM functions
 void mem_init(void);
 unsigned char get_byte(unsigned short addr);
+unsigned char read_byte(unsigned short addr);
 unsigned short get_word(unsigned short addr);

@@ -15,13 +15,18 @@ int main(){
 	
 
 	// load example instruction into ROM
-	mem.data[0] = 0xA9;
-	mem.data[1] = 0xAB;
-	mem.data[2] = 0x4A;
+	mem.data[0] = 0xA2;
+	mem.data[1] = 0x01;
+	mem.data[2] = 0xB5;
+	mem.data[3] = 0x10;
+	mem.data[0x11] = 0xAD;
+
+
 
 	// execute 2 clock cycles
 	//unsigned int cycles = 4;
-	execute(4);
+	cpu.cycles = 6;
+	execute();
 
 	// output status
 	output_status();
@@ -48,23 +53,21 @@ void reset_cpu(){
 
 
 // execute function
-void execute(unsigned int cycles){
-	// variable to hold zero page addres for "_ZP instructions"
+void execute(){
+	// variable to hold zero page addres for "_ZP", "_ZPX" instructions
 	unsigned char zp_addr;
 
 
 	// execute as many cycles as inputted
-	while(cycles > 0){
+	while(cpu.cycles > 0){
 
 		// fetch instruction byte (fetching instruction byte always takes 1 cycle)
 		unsigned char instruction = get_byte(cpu.PC);
-		// increment program counter
-		cpu.PC++;
-		// execute one cycle
-		cycles--;
+
 
 		// Immediate addressing mode instructions "_IM" are 2 bytes and take 2 cycles (1: fetch opcode 2: fetch immediate value from ROM)
-		// Zero Papge addressing mode instructions "_ZP" are 2 bytes and take 3 cycles (1: fetch opcode 2: fetch address in zero page 3: load value from ZP)
+		// Zero Page addressing mode instructions "_ZP" are 2 bytes and take 3 cycles (1: fetch opcode 2: fetch address in zero page 3: load value from ZP)
+		// Zero Page X addressing mode instructions "_ZPX" are 2 bytes and take 4 cycles (1: fetch opcode 2: fetch address in zero page 3: add value at X to value from zero page 4: load mem[zp + X] to accumulator)
 		switch(instruction){
 
 			case LDA_IM:
@@ -72,21 +75,26 @@ void execute(unsigned int cycles){
 				cpu.A = get_byte(cpu.PC);
 				// set status register flags
 				LDA_set_status();
-				// increment program counter
-				cpu.PC++;
-				// execute one cycle
-				cycles--;
 				break;
 
 			case LDA_ZP:
 				// in this mode, next byte after opcode is address in zero page
-				zp_addr = get_byte(cpu.PC);
-				cycles--;
+				zp_addr = read_byte(cpu.PC);
 				cpu.A = get_byte(zp_addr);
 				// set status register flags
 				LDA_set_status();
-				cycles--;
-				cpu.PC++;
+				break;
+
+			case LDA_ZPX:
+				// in this mode, accumulator = memory[zeroPageAddress + X]
+				zp_addr = get_byte(cpu.PC);
+				// add contents of X register to value from zero page
+				zp_addr += cpu.X;
+				cpu.cycles--;
+				// we dont want to increment the program counter again here (we already did in the "get_byte()" above)
+				cpu.A = read_byte(zp_addr);
+				// set status register flags
+				LDA_set_status();
 				break;
 
 			case LDX_IM:
@@ -94,21 +102,14 @@ void execute(unsigned int cycles){
 				cpu.X = get_byte(cpu.PC);
 				// set status register flags
 				LDX_set_status();
-				// increment program counter
-				cpu.PC++;
-				// execute one cycle
-				cycles--;
 				break;
 
 			case LDX_ZP:
 				// in this mode, next byte after opcode is address in zero page
-				zp_addr = get_byte(cpu.PC);
-				cycles--;
+				zp_addr = read_byte(cpu.PC);
 				cpu.X = get_byte(zp_addr);
 				// set status register flags
 				LDX_set_status();
-				cycles--;
-				cpu.PC++;
 				break;
 
 			case LDY_IM:
@@ -116,21 +117,15 @@ void execute(unsigned int cycles){
 				cpu.Y = get_byte(cpu.PC);
 				// set status register flags
 				LDY_set_status();
-				// increment program counter
-				cpu.PC++;
 				// execute one cycle
-				cycles--;
 				break;
 
 			case LDY_ZP:
 				// in this mode, next byte after opcode is address in zero page
-				zp_addr = get_byte(cpu.PC);
-				cycles--;
-				cpu.Y = get_byte(zp_addr);
+				zp_addr = read_byte(cpu.PC);
+				cpu.Y= get_byte(zp_addr);
 				// set status register flags
 				LDY_set_status();
-				cycles--;
-				cpu.PC++;
 				break;
 
 			case LSR_AC:
@@ -143,7 +138,13 @@ void execute(unsigned int cycles){
 					cpu.SR |= 0x02;
 				}
 				// execute one cycle
-				cycles--;
+				cpu.cycles--;
+				// increment program counter
+				cpu.PC++;
+				break;
+
+			case JSR_AB:
+
 				break;
 
 
@@ -203,16 +204,30 @@ void mem_init(){
 	}
 }
 
-// retrieve byte from ROM
+// retrieve byte from memory (increments PC)
 unsigned char get_byte(unsigned short addr){
-	return mem.data[addr];
+
+	unsigned char byte = mem.data[addr];
+	cpu.cycles--;
+	cpu.PC++;
+	return byte;
 }
 
-// retrieve word (two bytes) from ROM
+// reading byte from memory (not the same as above, does not "execute code" which means PC does not get incremented)
+unsigned char read_byte(unsigned short addr){
+	unsigned char byte = mem.data[addr];
+	cpu.cycles--;
+	return byte;
+}
+
+// retrieve word (two bytes) from memory (increments PC)
 // retrieves byte at address and byte at next address
 // system and 6502 are little endian (watch for preserving endianness)
 unsigned short get_word(unsigned short addr){
+	
 
-	// add functionality...
-	return 0;
+	// 6502 and this VM are little endian (so first read byte is on LSB side)
+	unsigned short temp = mem.data[addr];
+	cpu.PC++;
+
 }
