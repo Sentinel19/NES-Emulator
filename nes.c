@@ -126,23 +126,23 @@ void execute(){
 				break;
 
 			case LDA_INX: // 6 cycles
-				zp_addr = get_byte();
+				zp_addr = zero_page_addr();
 				zp_addr += cpu.X;
 				cpu.cycles--;
 				eff_addr = read_word(zp_addr);
 				cpu.A = read_byte(eff_addr);
-				// check if page boundary was crossed
-				if((eff_addr + (cpu.Y)) - eff_addr >= 0xFF){
-					cpu.cycles--;
-				}
 				// set status register flags
 				LD_set_status((cpu.A));					
 				break;
 
 			case LDA_INY: // 5 cycles (6 if page boundary is crossed...)
-				zp_addr = get_byte();
+				zp_addr = zero_page_addr();
 				eff_addr = read_word(zp_addr);
 				cpu.A = read_byte(eff_addr + (cpu.Y));
+				// check if page boundary was crossed
+				if((eff_addr + (cpu.Y)) - eff_addr >= 0xFF){
+					cpu.cycles--;
+				}
 				// set status register flags
 				LD_set_status((cpu.A));
 				break;
@@ -204,7 +204,7 @@ void execute(){
 				LD_set_status((cpu.Y));
 				break;
 
-			case LDY_ZPX:
+			case LDY_ZPX: // 4 cycles
 				zp_addr = zero_page_X_addr();
 				// handle "wrap around" if overflow (does not touch lower 8 bits so if no overflow its fine still I believe)
 				zp_addr &= 0xFF;
@@ -244,8 +244,8 @@ void execute(){
 				break;
 
 		// Jump Instructions:
-			case JSR_AB: // (uses Absolute addressing mode)
-				abs_addr = get_word();
+			case JSR_AB: // 6 cycles (uses Absolute addressing mode)
+				abs_addr = absolute_addr();
 				// push address (-1) of the return point onto stack
 				write_word( 0x0100 | (cpu.SP), (cpu.PC - 1));
 				// increment stack pointer

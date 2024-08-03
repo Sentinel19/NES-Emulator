@@ -28,6 +28,12 @@
 #define LDY_AB 0xAC // absolute
 #define LDY_ABX 0xBC // absolute X
 
+// Store Accumulator
+
+// Store X
+
+// Store Y
+
 // Logical Shift Right    
 #define LSR_AC 0x4A    // accumulator
 
