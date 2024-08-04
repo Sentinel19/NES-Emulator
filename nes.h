@@ -30,12 +30,34 @@
 
 // Store Accumulator
 #define STA_ZP 0x85 // zero page
+#define STA_ZPX 0x95 // zero page X
+#define STA_AB 0x8D // absolute
+#define STA_ABX 0x9D // absolute X
+#define STA_ABY 0x99 // absolute Y
+#define STA_INX 0x81 // indirect X
+#define STA_INY 0x91 // indirect Y
+
 
 // Store X
 #define STX_ZP 0x86 // zero page
+#define STX_ZPY 0x96 // zero page Y
+#define STX_AB 0x8E // absolute
+
+
 
 // Store Y
 #define STY_ZP 0x84 // zero page
+#define STY_ZPX 0x94 // zero page X
+#define STY_AB 0x8C // absolute
+
+
+// Register Transfer
+#define TAX 0xAA // implied
+#define TAY 0xA8 // implied
+#define TSX 0xBA // implied
+#define TXA 0x8A // implied
+#define TXS 0x9A // implied
+#define TYA 0x98 // implied
 
 // Logical Shift Right    
 #define LSR_AC 0x4A    // accumulator
@@ -81,6 +103,7 @@ void LDA_set_status(void);
 
 void mem_init(void);
 void output_zero_page(void);
+void output_page(unsigned int offset);
 
 // General byte and word fetching/reading:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

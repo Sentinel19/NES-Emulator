@@ -15,13 +15,17 @@ int main(){
 	
 
 	// load example instruction into ROM
-	mem.data[0] = 0xA9;
+	mem.data[0] = LDA_IM;
 	mem.data[1] = 0xAD;
-	mem.data[2] = 0x85;
-	mem.data[3] = 0xAA;
-	mem.data[4] = 0xA4;
-	mem.data[5] = 0xAA;
-	mem.data[255] = 0x01;
+	// 2
+	mem.data[2] = LDY_IM;
+	mem.data[3] = 0x01;
+	// 2
+	mem.data[4] = STA_INY;
+	mem.data[5] = 0xA9;
+	// 6
+
+	mem.data[0xAA] = 0xBB;
 
 
 
@@ -29,7 +33,8 @@ int main(){
 
 
 
-	cpu.cycles = 8;
+
+	cpu.cycles = 10;
 	execute();
 
 	// output status
@@ -37,6 +42,8 @@ int main(){
 
 	// output zero page contents
 	output_zero_page();
+
+
 
 
 
@@ -252,6 +259,107 @@ void execute(){
 				write_byte(zp_addr, (cpu.A));
 				break;
 
+			case STA_ZPX: // 4 cycles
+				zp_addr = zero_page_X_addr();
+				write_byte(zp_addr, (cpu.A));
+				break;
+
+			case STA_AB: // 4 cycles
+				abs_addr = absolute_addr();
+				write_byte(abs_addr, (cpu.A));
+				break;
+
+			case STA_ABX: // 5 cycles
+				abs_addr = absolute_X_addr();
+				write_byte(abs_addr, (cpu.A));
+				break;
+
+			case STA_ABY: // 5 cycles
+				abs_addr = absolute_Y_addr();
+				write_byte(abs_addr, (cpu.A));
+				break;
+
+			case STA_INX: // 6 cycles
+				zp_addr = zero_page_addr();
+				zp_addr += cpu.X;
+				cpu.cycles--;
+				eff_addr = read_word(zp_addr);
+				write_byte(eff_addr, (cpu.A));				
+				break;
+
+			case STA_INY: // 6 cycles
+				zp_addr = zero_page_addr();
+				zp_addr += cpu.Y;
+				cpu.cycles--;
+				eff_addr = read_word(zp_addr);
+				write_byte(eff_addr, (cpu.A));				
+				break;
+
+		// STX Variants:
+			case STX_ZP: // 3 cycles
+				zp_addr = zero_page_addr();
+				write_byte(zp_addr, (cpu.X));
+				break;
+
+			case STX_ZPY: // 4 cycles
+				zp_addr = zero_page_Y_addr();
+				write_byte(zp_addr, (cpu.X));
+				break;
+
+			case STX_AB: // 4 cycles
+				abs_addr = absolute_addr();
+				write_byte(abs_addr, (cpu.X));
+				break;
+
+		// STY Variants:
+			case STY_ZP: // 3 cycles
+				zp_addr = zero_page_addr();
+				write_byte(zp_addr, (cpu.Y));
+				break;
+
+			case STY_ZPX: // 4 cycles
+				zp_addr = zero_page_X_addr();
+				write_byte(zp_addr, (cpu.Y));
+				break;
+
+			case STY_AB: // 4 cycles
+				abs_addr = absolute_addr();
+				write_byte(abs_addr, (cpu.Y));
+				break;
+
+		// Register Transfer:
+			case TAX:    // 2 cycles
+				cpu.X = (cpu.A);
+				cpu.cycles--;
+				break;
+
+			case TAY:    // 2 cycles
+				cpu.Y = (cpu.A);
+				cpu.cycles--;
+				break;
+
+			case TSX:    // 2 cycles
+				cpu.X = (cpu.SP);
+				cpu.cycles--;
+				break;
+
+			case TXA:    // 2 cycles
+				cpu.A = (cpu.X);
+				cpu.cycles--;
+				break;
+
+			case TYA:    // 2 cycles
+				cpu.A = (cpu.Y);
+				cpu.cycles--;
+				break;
+
+			case TXS:    // 2 cycles
+				cpu.SP = (cpu.X);
+				cpu.cycles--;
+				break;
+
+
+
 		// Jump Instructions:
 			case JSR_AB: // 6 cycles (uses Absolute addressing mode)
 				abs_addr = absolute_addr();
@@ -266,6 +374,7 @@ void execute(){
 
 			default:
 				printf("Instruction: $%hhx not handled yet\n\n", instruction);
+				break;
 
 
 
@@ -297,6 +406,7 @@ void output_status(){
 	printf("=====================================\n");
 }
 
+
 //Memory functions:=======================================================================================================================================================================================================
 
 // initialization function
@@ -308,7 +418,7 @@ void mem_init(){
 
 // displays contents of zero page to terminal
 void output_zero_page(){
-	printf("Zero Page: (Lower Byte x Upper Byte)\n");
+	printf("Zero Page: (Lower bits x Upper bits)\n");
 	printf("============================================================================\n");
 	// print column #s
 	for(unsigned int b = 0; b < 16; b++){
@@ -334,6 +444,41 @@ void output_zero_page(){
 			}
 			else{
 				printf("x%x|", mem.data[(i * 16) + j]);
+			}
+		}
+		printf("\n");
+	}
+	printf("============================================================================\n");	
+}
+
+// outputs any other page of memory (if needed)
+void output_page(unsigned int offset){
+	printf("Upper Byte: 0x%02x (Lower bits x Upper bits)\n", offset/0x100);
+	printf("============================================================================\n");
+	// print column #s
+	for(unsigned int b = 0; b < 16; b++){
+		if(b == 0){
+			printf("   %x: |", b);
+		}
+		else{
+			printf("%x: |", b);
+		}
+		
+	}
+	printf("\n");
+	// row counter
+	for(unsigned int i = 0; i < 16; i++){
+		// print row #s
+
+		printf("%x:|", i);
+
+		// column counter
+		for(unsigned int j = 0; j < 16; j++){
+			if(mem.data[(i * 16) + j + offset] < 10){
+				printf("x0%x|", mem.data[(i * 16) + j + offset]);
+			}
+			else{
+				printf("x%x|", mem.data[(i * 16) + j + offset]);
 			}
 		}
 		printf("\n");
