@@ -331,37 +331,50 @@ void execute(){
 			case TAX:    // 2 cycles
 				cpu.X = (cpu.A);
 				cpu.cycles--;
+				// set status register flags
+				LD_set_status((cpu.X));
 				break;
 
 			case TAY:    // 2 cycles
 				cpu.Y = (cpu.A);
 				cpu.cycles--;
+				// set status register flags
+				LD_set_status((cpu.Y));
 				break;
 
+			// X is the only register that can transfer to/from the stack pointer
 			case TSX:    // 2 cycles
 				cpu.X = (cpu.SP);
 				cpu.cycles--;
+				// set status register flags
+				LD_set_status((cpu.X));
 				break;
 
 			case TXA:    // 2 cycles
 				cpu.A = (cpu.X);
 				cpu.cycles--;
+				// set status register flags
+				LD_set_status((cpu.A));
 				break;
 
 			case TYA:    // 2 cycles
 				cpu.A = (cpu.Y);
 				cpu.cycles--;
+				// set status register flags
+				LD_set_status((cpu.A));
 				break;
 
+			// X is the only register that can transfer to/from the stack pointer
 			case TXS:    // 2 cycles
 				cpu.SP = (cpu.X);
 				cpu.cycles--;
+				// updating the stack pointer does not affect the status register
 				break;
 
 
 
 		// Jump Instructions:
-			case JSR_AB: // 6 cycles (uses Absolute addressing mode)
+			case JSR: // 6 cycles (uses Absolute addressing mode)
 				abs_addr = absolute_addr();
 				// push address (-1) of the return point onto stack
 				write_word( 0x0100 | (cpu.SP), (cpu.PC - 1));

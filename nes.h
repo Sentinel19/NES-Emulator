@@ -63,7 +63,7 @@
 #define LSR_AC 0x4A    // accumulator
 
 // Jump to Subroutine
-#define JSR_AB 0x20// absolute
+#define JSR 0x20// absolute
 
 
 // CPU constants
