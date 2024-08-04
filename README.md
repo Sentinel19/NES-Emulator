@@ -4,3 +4,18 @@ Started: 8/3/24
 
 See this site for info on 6502:
 http://www.6502.org/users/obelisk/6502/index.html
+
+Instructions Implemented So Far:
+  LDA
+  LDX
+  LDY
+  STA
+  STX
+  STY
+  TAX
+  TAY
+  TSX
+  TXA
+  TXS
+  TYA
+  JSR
