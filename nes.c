@@ -15,25 +15,28 @@ int main(){
 	
 
 	// load example instruction into ROM
-	mem.data[0] = 0xA0;
-	mem.data[1] = 0x01;
-	mem.data[2] = 0xB6;
-	mem.data[3] = 0xBB;
-	mem.data[4] = 0x00;
-	mem.data[0xBC] = 0xAD;
+	mem.data[0] = 0xA9;
+	mem.data[1] = 0xAD;
+	mem.data[2] = 0x85;
+	mem.data[3] = 0xAA;
+	mem.data[4] = 0xA4;
+	mem.data[5] = 0xAA;
+	mem.data[255] = 0x01;
 
 
 
-	
 
 
 
 
-	cpu.cycles = 6;
+	cpu.cycles = 8;
 	execute();
 
 	// output status
 	output_status();
+
+	// output zero page contents
+	output_zero_page();
 
 
 
@@ -243,6 +246,12 @@ void execute(){
 				cpu.PC++;
 				break;
 
+		// STA Variants:
+			case STA_ZP: // 3 cycles
+				zp_addr = zero_page_addr();
+				write_byte(zp_addr, (cpu.A));
+				break;
+
 		// Jump Instructions:
 			case JSR_AB: // 6 cycles (uses Absolute addressing mode)
 				abs_addr = absolute_addr();
@@ -279,13 +288,13 @@ void LD_set_status(unsigned char reg){
 
 
 
-// display registers function
+// outputs status of all registers to terminal
 void output_status(){
 	printf("6502 Simulator\n");
-	printf("=====================\n");
-	printf(" PC  X   Y   A   SR   SP  \n");
-	printf("%04x %02x  %02x  %02x  %02x   %02x\n", cpu.PC, cpu.X, cpu.Y, cpu.A, cpu.SR, cpu.SP);
-	printf("=====================\n\n");
+	printf("=====================================\n");
+	printf(" PC     X     Y     A     SR     SP  \n");
+	printf("0x%04x 0x%02x  0x%02x  0x%02x  0x%02x   0x%02x\n", cpu.PC, cpu.X, cpu.Y, cpu.A, cpu.SR, cpu.SP);
+	printf("=====================================\n");
 }
 
 //Memory functions:=======================================================================================================================================================================================================
@@ -295,6 +304,41 @@ void mem_init(){
 	for(unsigned int i = 0; i < MAX_MEM; i++){
 		mem.data[i] = 0;
 	}
+}
+
+// displays contents of zero page to terminal
+void output_zero_page(){
+	printf("Zero Page: (Lower Byte x Upper Byte)\n");
+	printf("============================================================================\n");
+	// print column #s
+	for(unsigned int b = 0; b < 16; b++){
+		if(b == 0){
+			printf("   %x: |", b);
+		}
+		else{
+			printf("%x: |", b);
+		}
+		
+	}
+	printf("\n");
+	// row counter
+	for(unsigned int i = 0; i < 16; i++){
+		// print row #s
+
+		printf("%x:|", i);
+
+		// column counter
+		for(unsigned int j = 0; j < 16; j++){
+			if(mem.data[(i * 16) + j] < 10){
+				printf("x0%x|", mem.data[(i * 16) + j]);
+			}
+			else{
+				printf("x%x|", mem.data[(i * 16) + j]);
+			}
+		}
+		printf("\n");
+	}
+	printf("============================================================================\n");	
 }
 
 // General byte and word fetching/reading:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -406,6 +450,12 @@ unsigned short absolute_Y_addr(){
 
 
 // General byte and word writing:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// simply writes a byte to memory
+void write_byte(unsigned short addr, unsigned char data){
+	mem.data[addr] = data;
+	cpu.cycles--;
+}
 
 // simply writes a word to memory
 void write_word(unsigned short addr, unsigned char data){

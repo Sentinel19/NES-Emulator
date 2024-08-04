@@ -29,10 +29,13 @@
 #define LDY_ABX 0xBC // absolute X
 
 // Store Accumulator
+#define STA_ZP 0x85 // zero page
 
 // Store X
+#define STX_ZP 0x86 // zero page
 
 // Store Y
+#define STY_ZP 0x84 // zero page
 
 // Logical Shift Right    
 #define LSR_AC 0x4A    // accumulator
@@ -77,6 +80,7 @@ void LDA_set_status(void);
 //Memory functions:=======================================================================================================================================================================================================
 
 void mem_init(void);
+void output_zero_page(void);
 
 // General byte and word fetching/reading:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -96,4 +100,5 @@ unsigned short absolute_Y_addr(void);
 
 // General byte and word writing:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+void write_byte(unsigned short addr, unsigned char data);
 void write_word(unsigned short addr, unsigned char data);
