@@ -62,6 +62,40 @@
 // Logical Shift Right    
 #define LSR_AC 0x4A    // accumulator
 
+// Logical AND
+#define AND_IM	0x29 // immediate
+#define AND_ZP	0x25 // zero page
+#define AND_ZPX	0x35 // zero page X
+#define AND_AB	0x2D // absolute
+#define AND_ABX	0x3D // absolute X
+#define AND_ABY	0x39 // absolute Y
+#define AND_INX	0x21 // indirect X
+#define AND_INY	0x31 // indirect Y
+
+// Logiacal Exlusive OR
+#define EOR_IM	0x49 // immediate
+#define EOR_ZP	0x45 // zero page
+#define EOR_ZPX	0x55 // zero page X
+#define EOR_AB	0x4D // absolute
+#define EOR_ABX	0x5D // absolute X
+#define EOR_ABY	0x59 // absolute Y
+#define EOR_INX	0x41 // indirect X
+#define EOR_INY	0x51 // indirect Y
+
+// Logical Inclusive OR
+#define ORA_IM	0x09 // immediate
+#define ORA_ZP	0x05 // zero page
+#define ORA_ZPX	0x15 // zero page X
+#define ORA_AB	0x0D // absolute
+#define ORA_ABX	0x1D // absolute X
+#define ORA_ABY	0x19 // absolute Y
+#define ORA_INX	0x01 // indirect X
+#define ORA_INY	0x11 // indirect Y
+
+// Logical Bit Test
+#define BIT_ZP	0x24 // zero page
+#define BIT_AB	0x2C // absolute
+
 // Jump to Subroutine
 #define JSR 0x20// absolute
 

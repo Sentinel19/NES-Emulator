@@ -18,8 +18,8 @@ int main(){
 	mem.data[0] = LDA_IM;
 	mem.data[1] = 0xAD;
 	// 2
-	mem.data[2] = LDY_IM;
-	mem.data[3] = 0x01;
+	mem.data[2] = AND_IM;
+	mem.data[3] = 0x0F;
 	// 2
 	mem.data[4] = STA_INY;
 	mem.data[5] = 0xA9;
@@ -78,8 +78,14 @@ void execute(){
 	// variable to hold effective address for indirect addressing instructions
 	unsigned short eff_addr;
 
+	// variable to hold previous memory values for immediate instructions
+	unsigned char mem_val;
+
+	// New Instructions were breaking things, adding this until all the instructions are in
+	int x = 1;
+
 	// execute as many cycles as inputted
-	while(cpu.cycles > 0){
+	while(x == 1){
 
 		// fetch instruction byte (fetching instruction byte always takes 1 cycle)
 		unsigned char instruction = get_byte();
@@ -93,7 +99,7 @@ void execute(){
 				// load next byte into accumulator register
 				cpu.A = get_byte();
 				// set status register flags
-				LD_set_status((cpu.A));
+				nz_set_status((cpu.A));
 				break;
 
 			case LDA_ZP: // 3 cycles
@@ -101,7 +107,7 @@ void execute(){
 				zp_addr = zero_page_addr();
 				cpu.A = read_byte(zp_addr);
 				// set status register flags
-				LD_set_status((cpu.A));
+				nz_set_status((cpu.A));
 				break;
 
 			case LDA_ZPX: // 4 cycles
@@ -111,28 +117,28 @@ void execute(){
 				// we dont want to increment the program counter again here (we already did in the "get_byte()" above)
 				cpu.A = read_byte(zp_addr);
 				// set status register flags
-				LD_set_status((cpu.A));
+				nz_set_status((cpu.A));
 				break;
 
 			case LDA_AB: // 4 cycles			
 				abs_addr = absolute_addr();
 				cpu.A = read_byte(abs_addr);
 				// set status register flags
-				LD_set_status((cpu.A));	
+				nz_set_status((cpu.A));	
 				break;
 
 			case LDA_ABX: // 4 cycles (5 if page boundary is crossed...)
 				abs_addr = absolute_X_addr();
 				cpu.A = read_byte(abs_addr);
 				// set status register flags
-				LD_set_status((cpu.A));	
+				nz_set_status((cpu.A));	
 				break;
 
 			case LDA_ABY: // 4 cycles (5 if page boundary is crossed...)
 				abs_addr = absolute_Y_addr();
 				cpu.A = read_byte(abs_addr);
 				// set status register flags
-				LD_set_status((cpu.A));	
+				nz_set_status((cpu.A));	
 				break;
 
 			case LDA_INX: // 6 cycles
@@ -142,7 +148,7 @@ void execute(){
 				eff_addr = read_word(zp_addr);
 				cpu.A = read_byte(eff_addr);
 				// set status register flags
-				LD_set_status((cpu.A));					
+				nz_set_status((cpu.A));					
 				break;
 
 			case LDA_INY: // 5 cycles (6 if page boundary is crossed...)
@@ -154,7 +160,7 @@ void execute(){
 					cpu.cycles--;
 				}
 				// set status register flags
-				LD_set_status((cpu.A));
+				nz_set_status((cpu.A));
 				break;
 
 		// LDX Variants:	
@@ -162,7 +168,7 @@ void execute(){
 				// load next byte into accumulator register
 				cpu.X = get_byte();
 				// set status register flags
-				LD_set_status((cpu.X));
+				nz_set_status((cpu.X));
 				break;
 
 			case LDX_ZP: // 3 cycles
@@ -170,7 +176,7 @@ void execute(){
 				zp_addr = zero_page_addr();
 				cpu.X = read_byte(zp_addr);
 				// set status register flags
-				LD_set_status((cpu.X));
+				nz_set_status((cpu.X));
 				break;
 
 			case LDX_ZPY: // 4 cycles
@@ -180,21 +186,21 @@ void execute(){
 				// we dont want to increment the program counter again here (we already did in the "get_byte()" above)
 				cpu.X = read_byte(zp_addr);
 				// set status register flags
-				LD_set_status((cpu.X));
+				nz_set_status((cpu.X));
 				break;
 
 			case LDX_AB: // 4 cycles
 				abs_addr = absolute_addr();
 				cpu.X = read_byte(abs_addr);
 				// set status register flags
-				LD_set_status((cpu.X));	
+				nz_set_status((cpu.X));	
 				break;
 
 			case LDX_ABY: // 4 cycles (5 if page boundary is crossed...)
 				abs_addr = absolute_Y_addr();
 				cpu.X = read_byte(abs_addr);
 				// set status register flags
-				LD_set_status((cpu.X));	
+				nz_set_status((cpu.X));	
 				break;								
 
 		// LDY Variants:
@@ -202,7 +208,7 @@ void execute(){
 				// load next byte into accumulator register
 				cpu.Y = get_byte();
 				// set status register flags
-				LD_set_status((cpu.Y));
+				nz_set_status((cpu.Y));
 				// execute one cycle
 				break;
 
@@ -211,7 +217,7 @@ void execute(){
 				zp_addr = zero_page_addr();
 				cpu.Y= read_byte(zp_addr);
 				// set status register flags
-				LD_set_status((cpu.Y));
+				nz_set_status((cpu.Y));
 				break;
 
 			case LDY_ZPX: // 4 cycles
@@ -221,21 +227,21 @@ void execute(){
 				// we dont want to increment the program counter again here (we already did in the "get_byte()" above)
 				cpu.Y = read_byte(zp_addr);
 				// set status register flags
-				LD_set_status((cpu.Y));
+				nz_set_status((cpu.Y));
 				break;
 
 			case LDY_AB: // 4 cycles
 				abs_addr = absolute_addr();
 				cpu.Y = read_byte(abs_addr);
 				// set status register flags
-				LD_set_status((cpu.Y));	
+				nz_set_status((cpu.Y));	
 				break;		
 
 			case LDY_ABX: // 4 cycles (5 if page boundary is crossed...)
 				abs_addr = absolute_X_addr();
 				cpu.Y = read_byte(abs_addr);
 				// set status register flags
-				LD_set_status((cpu.Y));	
+				nz_set_status((cpu.Y));	
 				break;
 
 			case LSR_AC:
@@ -332,14 +338,14 @@ void execute(){
 				cpu.X = (cpu.A);
 				cpu.cycles--;
 				// set status register flags
-				LD_set_status((cpu.X));
+				nz_set_status((cpu.X));
 				break;
 
 			case TAY:    // 2 cycles
 				cpu.Y = (cpu.A);
 				cpu.cycles--;
 				// set status register flags
-				LD_set_status((cpu.Y));
+				nz_set_status((cpu.Y));
 				break;
 
 			// X is the only register that can transfer to/from the stack pointer
@@ -347,21 +353,21 @@ void execute(){
 				cpu.X = (cpu.SP);
 				cpu.cycles--;
 				// set status register flags
-				LD_set_status((cpu.X));
+				nz_set_status((cpu.X));
 				break;
 
 			case TXA:    // 2 cycles
 				cpu.A = (cpu.X);
 				cpu.cycles--;
 				// set status register flags
-				LD_set_status((cpu.A));
+				nz_set_status((cpu.A));
 				break;
 
 			case TYA:    // 2 cycles
 				cpu.A = (cpu.Y);
 				cpu.cycles--;
 				// set status register flags
-				LD_set_status((cpu.A));
+				nz_set_status((cpu.A));
 				break;
 
 			// X is the only register that can transfer to/from the stack pointer
@@ -371,6 +377,257 @@ void execute(){
 				// updating the stack pointer does not affect the status register
 				break;
 
+		// LOGICAL INSTRUCTIONS
+			// All Logiacal AND variations
+			case AND_IM:	// 2 cycles
+				// read previous memory value
+				mem_val = read_byte(cpu.PC-1);
+				// logical AND immediate value and previous mem value
+				cpu.A = get_byte() & mem_val;
+				//printf("AND_IM cpu.A: %u \n", cpu.A); // debug message
+				nz_set_status((cpu.A));
+				break;
+
+			case AND_ZP:	// 3 cycles
+				// in this mode, next byte after opcode is address in zero page
+				zp_addr = zero_page_addr();
+				mem_val = read_byte(zp_addr);
+				cpu.A = get_byte() & mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));
+				break;
+
+			case AND_ZPX: // 4 cycles
+				zp_addr = zero_page_X_addr();
+				// handle "wrap around" if overflow (does not touch lower 8 bits so if no overflow its fine still I believe)
+				zp_addr &= 0x00FF;
+				// we dont want to increment the program counter again here (we already did in the "get_byte()" above)
+				mem_val = read_byte(zp_addr);
+				cpu.A = get_byte() & mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));
+				break;
+
+			case AND_AB: // 4 cycles			
+				abs_addr = absolute_addr();
+				mem_val = read_byte(abs_addr);
+				cpu.A = get_byte() & mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));	
+				break;
+
+			case AND_ABX: // 4 cycles (5 if page boundary is crossed...)
+				abs_addr = absolute_X_addr();
+				mem_val = read_byte(abs_addr);
+				cpu.A = get_byte() & mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));	
+				break;
+
+			case AND_ABY: // 4 cycles (5 if page boundary is crossed...)
+				abs_addr = absolute_Y_addr();
+				mem_val = read_byte(abs_addr);
+				cpu.A = get_byte() & mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));	
+				break;
+
+			case AND_INX: // 6 cycles
+				zp_addr = zero_page_addr();
+				zp_addr += cpu.X;
+				cpu.cycles--;
+				eff_addr = read_word(zp_addr);
+				mem_val = read_byte(eff_addr);
+				cpu.A = get_byte() & mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));					
+				break;
+
+			case AND_INY: // 5 cycles (6 if page boundary is crossed...)
+				zp_addr = zero_page_addr();
+				eff_addr = read_word(zp_addr);
+				mem_val = read_byte(eff_addr + (cpu.Y));
+				cpu.A = get_byte() & mem_val;
+				// check if page boundary was crossed
+				if((eff_addr + (cpu.Y)) - eff_addr >= 0xFF){
+					cpu.cycles--;
+				}
+				// set status register flags
+				nz_set_status((cpu.A));
+				break;
+
+			// All Logical EOR varitaions
+			case EOR_IM:	// 2 cycles
+				// read previous memory value
+				mem_val = read_byte(cpu.PC-1);
+				// logical EOR immediate value and previous mem value
+				cpu.A = get_byte() ^ mem_val;
+				//printf("AND_IM cpu.A: %u \n", cpu.A); // debug message
+				nz_set_status((cpu.A));
+				break;
+
+			case EOR_ZP:	// 3 cycles
+				// in this mode, next byte after opcode is address in zero page
+				zp_addr = zero_page_addr();
+				mem_val = read_byte(zp_addr);
+				cpu.A = get_byte() ^ mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));
+				break;
+
+			case EOR_ZPX: // 4 cycles
+				zp_addr = zero_page_X_addr();
+				// handle "wrap around" if overflow (does not touch lower 8 bits so if no overflow its fine still I believe)
+				zp_addr &= 0x00FF;
+				// we dont want to increment the program counter again here (we already did in the "get_byte()" above)
+				mem_val = read_byte(zp_addr);
+				cpu.A = get_byte() ^ mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));
+				break;
+
+			case EOR_AB: // 4 cycles			
+				abs_addr = absolute_addr();
+				mem_val = read_byte(abs_addr);
+				cpu.A = get_byte() ^ mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));	
+				break;
+
+			case EOR_ABX: // 4 cycles (5 if page boundary is crossed...)
+				abs_addr = absolute_X_addr();
+				mem_val = read_byte(abs_addr);
+				cpu.A = get_byte() ^ mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));	
+				break;
+
+			case EOR_ABY: // 4 cycles (5 if page boundary is crossed...)
+				abs_addr = absolute_Y_addr();
+				mem_val = read_byte(abs_addr);
+				cpu.A = get_byte() ^ mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));	
+				break;
+
+			case EOR_INX: // 6 cycles
+				zp_addr = zero_page_addr();
+				zp_addr += cpu.X;
+				cpu.cycles--;
+				eff_addr = read_word(zp_addr);
+				mem_val = read_byte(eff_addr);
+				cpu.A = get_byte() ^ mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));					
+				break;
+
+			case EOR_INY: // 5 cycles (6 if page boundary is crossed...)
+				zp_addr = zero_page_addr();
+				eff_addr = read_word(zp_addr);
+				mem_val = read_byte(eff_addr + (cpu.Y));
+				cpu.A = get_byte() ^ mem_val;
+				// check if page boundary was crossed
+				if((eff_addr + (cpu.Y)) - eff_addr >= 0xFF){
+					cpu.cycles--;
+				}
+				// set status register flags
+				nz_set_status((cpu.A));
+				break;
+
+			// All Logical ORA varitaions
+			case ORA_IM:	// 2 cycles
+				// read previous memory value
+				mem_val = read_byte(cpu.PC-1);
+				// logical ORA immediate value and previous mem value
+				cpu.A = get_byte() | mem_val;
+				//printf("AND_IM cpu.A: %u \n", cpu.A); // debug message
+				nz_set_status((cpu.A));
+				break;
+
+			case ORA_ZP:	// 3 cycles
+				// in this mode, next byte after opcode is address in zero page
+				zp_addr = zero_page_addr();
+				mem_val = read_byte(zp_addr);
+				cpu.A = get_byte() | mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));
+				break;
+
+			case ORA_ZPX: // 4 cycles
+				zp_addr = zero_page_X_addr();
+				// handle "wrap around" if overflow (does not touch lower 8 bits so if no overflow its fine still I believe)
+				zp_addr &= 0x00FF;
+				// we dont want to increment the program counter again here (we already did in the "get_byte()" above)
+				mem_val = read_byte(zp_addr);
+				cpu.A = get_byte() | mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));
+				break;
+
+			case ORA_AB: // 4 cycles			
+				abs_addr = absolute_addr();
+				mem_val = read_byte(abs_addr);
+				cpu.A = get_byte() | mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));	
+				break;
+
+			case ORA_ABX: // 4 cycles (5 if page boundary is crossed...)
+				abs_addr = absolute_X_addr();
+				mem_val = read_byte(abs_addr);
+				cpu.A = get_byte() | mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));	
+				break;
+
+			case ORA_ABY: // 4 cycles (5 if page boundary is crossed...)
+				abs_addr = absolute_Y_addr();
+				mem_val = read_byte(abs_addr);
+				cpu.A = get_byte() | mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));	
+				break;
+
+			case ORA_INX: // 6 cycles
+				zp_addr = zero_page_addr();
+				zp_addr += cpu.X;
+				cpu.cycles--;
+				eff_addr = read_word(zp_addr);
+				mem_val = read_byte(eff_addr);
+				cpu.A = get_byte() | mem_val;
+				// set status register flags
+				nz_set_status((cpu.A));					
+				break;
+
+			case ORA_INY: // 5 cycles (6 if page boundary is crossed...)
+				zp_addr = zero_page_addr();
+				eff_addr = read_word(zp_addr);
+				mem_val = read_byte(eff_addr + (cpu.Y));
+				cpu.A = get_byte() | mem_val;
+				// check if page boundary was crossed
+				if((eff_addr + (cpu.Y)) - eff_addr >= 0xFF){
+					cpu.cycles--;
+				}
+				// set status register flags
+				nz_set_status((cpu.A));
+				break;
+
+			// Logical Bit Test
+			case BIT_ZP:	// 3 cycles
+				zp_addr = zero_page_addr();
+				mem_val = read_byte(zp_addr);
+				cpu.A = get_byte() & mem_val;
+				// set status register flags (I feel like these aren't right)
+				nvz_set_status(cpu.A, &mem_val);
+				break;
+
+			case BIT_AB:	// 4 cycles
+				abs_addr = absolute_addr();
+				mem_val = read_byte(abs_addr);
+				cpu.A = get_byte() & mem_val;
+				// set status register flags (I feel like these aren't right)
+				nvz_set_status(cpu.A, &mem_val);
+				break;
 
 
 		// Jump Instructions:
@@ -387,6 +644,7 @@ void execute(){
 
 			default:
 				printf("Instruction: $%hhx not handled yet\n\n", instruction);
+				x = 0;
 				break;
 
 
@@ -398,14 +656,33 @@ void execute(){
 	}
 }
 
-// sets the status register for all load ("LD...") instructions
-void LD_set_status(unsigned char reg){
+// (deprecated comment) sets the status register for all load ("LD...") instructions
+//
+// Sets Negative and Zero Flags for Instructions that only affect these flags
+void nz_set_status(unsigned char reg){
 	if(reg == 0){ // zero flag
 		cpu.SR |= 0x02;
 	}
 	if((reg >> 7) == 1){ //negative flag
 		cpu.SR |= 0x80;
 	}
+}
+
+void nvz_set_status(unsigned char reg, unsigned char *mem_data){
+	unsigned char of, neg;
+	// Isolate overflow and negative bits before running checks
+	of = *mem_data & 0x40;
+	neg = *mem_data & 0x80;
+	if (reg == 0)				// zero flag
+		cpu.SR |= 0x02;
+	if ((of >> 6) == 1)	// overflow flag
+		cpu.SR |= 0x40;			// set value to 1 at bit 6
+	else
+		cpu.SR &= 0xBF;			// set value to 0 at bit 6
+	if((neg >> 7) == 1)		// negative flag
+		cpu.SR |= 0x80;			// set value to 1 at bit 7
+	else
+		cpu.SR &= 0x7F;			// set value to 0 at bit 7
 }
 
 
