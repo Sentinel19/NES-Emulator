@@ -24,3 +24,10 @@ Instructions Implemented So Far:
   EOR
   ORA
   BIT
+  CLC
+  CLD
+  CLI
+  CLV
+  SEC
+  SED
+  SEI

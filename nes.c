@@ -618,7 +618,7 @@ void execute(){
 				mem_val = read_byte(zp_addr);
 				cpu.A = get_byte() & mem_val;
 				// set status register flags (I feel like these aren't right)
-				nvz_set_status(cpu.A, &mem_val);
+				BIT_set_status(cpu.A, &mem_val);
 				break;
 
 			case BIT_AB:	// 4 cycles
@@ -626,7 +626,7 @@ void execute(){
 				mem_val = read_byte(abs_addr);
 				cpu.A = get_byte() & mem_val;
 				// set status register flags (I feel like these aren't right)
-				nvz_set_status(cpu.A, &mem_val);
+				BIT_set_status(cpu.A, &mem_val);
 				break;
 
 
@@ -647,8 +647,41 @@ void execute(){
 				x = 0;
 				break;
 
+		// Status Flag Instruction
+			case CLC: // 2 cycles
+				cpu.SR &= 0xFE;
+				cpu.cycles--;	// remove an extra cycle to accurately simulate cycle count
+				break;
 
+			case CLD: // 2 cycles
+				cpu.SR &= 0xF7;
+				cpu.cycles--;
+				break;
+			
+			case CLI: // 2 cylces
+				cpu.SR &= 0xFB;
+				cpu.cycles--;
+				break;
 
+			case CLV: // 2 cycles
+				cpu.SR &= 0xBF;
+				cpu.cycles--;
+				break;
+
+			case SEC: // 2 cycles
+				cpu.SR |= 0x01;
+				cpu.cycles--;
+				break;
+
+			case SED: // 2 cycles
+				cpu.SR |= 0x08;
+				cpu.cycles--;
+				break;
+
+			case SEI: // 2 cycles
+				cpu.SR |= 0x04;
+				cpu.cycles--;
+				break;
 
 		}
 
@@ -668,7 +701,8 @@ void nz_set_status(unsigned char reg){
 	}
 }
 
-void nvz_set_status(unsigned char reg, unsigned char *mem_data){
+// Sets status register for BIT instructions
+void BIT_set_status(unsigned char reg, unsigned char *mem_data){
 	unsigned char of, neg;
 	// Isolate overflow and negative bits before running checks
 	of = *mem_data & 0x40;
