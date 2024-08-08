@@ -21,20 +21,24 @@ int main(){
 	mem.data[2] = AND_IM;
 	mem.data[3] = 0x0F;
 	// 2
-	mem.data[4] = STA_INY;
+	mem.data[4] = STA_ABY;
 	mem.data[5] = 0xA9;
-	// 6
+	mem.data[6] = 0x00;
+	// 5 cycles
 
-	mem.data[0xAA] = 0xBB;
-
-
-
-
-
-
+	mem.data[7] = LDY_IM;
+	mem.data[8] = 0x69;
+	// 2
+	
 
 
-	cpu.cycles = 10;
+
+
+
+
+
+
+	cpu.cycles = 11;
 	execute();
 
 	// output status
@@ -87,6 +91,9 @@ void execute(){
 	// execute as many cycles as inputted
 	while(x == 1){
 
+		// added to aid in multi-instruction basic programs:
+		printf("Current Instruction: %x | Cycles remaining: %d\n", mem.data[cpu.PC], cpu.cycles);
+
 		// fetch instruction byte (fetching instruction byte always takes 1 cycle)
 		unsigned char instruction = get_byte();
 
@@ -129,6 +136,10 @@ void execute(){
 
 			case LDA_ABX: // 4 cycles (5 if page boundary is crossed...)
 				abs_addr = absolute_X_addr();
+				// check if page boundary was crossed
+				if((abs_addr + (cpu.X)) - abs_addr >= 0xFF){
+					cpu.cycles--;
+				}
 				cpu.A = read_byte(abs_addr);
 				// set status register flags
 				nz_set_status((cpu.A));	
@@ -136,6 +147,10 @@ void execute(){
 
 			case LDA_ABY: // 4 cycles (5 if page boundary is crossed...)
 				abs_addr = absolute_Y_addr();
+				// check if page boundary was crossed
+				if((abs_addr + (cpu.Y)) - abs_addr >= 0xFF){
+					cpu.cycles--;
+				}
 				cpu.A = read_byte(abs_addr);
 				// set status register flags
 				nz_set_status((cpu.A));	
@@ -198,6 +213,10 @@ void execute(){
 
 			case LDX_ABY: // 4 cycles (5 if page boundary is crossed...)
 				abs_addr = absolute_Y_addr();
+				// check if page boundary was crossed
+				if((abs_addr + (cpu.Y)) - abs_addr >= 0xFF){
+					cpu.cycles--;
+				}
 				cpu.X = read_byte(abs_addr);
 				// set status register flags
 				nz_set_status((cpu.X));	
@@ -239,6 +258,10 @@ void execute(){
 
 			case LDY_ABX: // 4 cycles (5 if page boundary is crossed...)
 				abs_addr = absolute_X_addr();
+				// check if page boundary was crossed
+				if((abs_addr + (cpu.X)) - abs_addr >= 0xFF){
+					cpu.cycles--;
+				}
 				cpu.Y = read_byte(abs_addr);
 				// set status register flags
 				nz_set_status((cpu.Y));	
@@ -278,11 +301,13 @@ void execute(){
 			case STA_ABX: // 5 cycles
 				abs_addr = absolute_X_addr();
 				write_byte(abs_addr, (cpu.A));
+				cpu.cycles--;
 				break;
 
 			case STA_ABY: // 5 cycles
 				abs_addr = absolute_Y_addr();
 				write_byte(abs_addr, (cpu.A));
+				cpu.cycles--;
 				break;
 
 			case STA_INX: // 6 cycles
@@ -899,10 +924,6 @@ unsigned short absolute_addr(){
 // done because many instructions use absolute with X offset addressing mode
 unsigned short absolute_X_addr(){
 	unsigned short abs_addr = get_word();
-	// check if page boundary was crossed
-	if((abs_addr + (cpu.X)) - abs_addr >= 0xFF){
-		cpu.cycles--;
-	}
 	return (abs_addr + (cpu.X));
 }
 
@@ -910,9 +931,6 @@ unsigned short absolute_X_addr(){
 unsigned short absolute_Y_addr(){
 	unsigned short abs_addr = get_word();
 	// check if page boundary was crossed
-	if((abs_addr + (cpu.Y)) - abs_addr >= 0xFF){
-		cpu.cycles--;
-	}
 	return (abs_addr + (cpu.Y));
 }
 
