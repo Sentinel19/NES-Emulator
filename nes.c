@@ -15,30 +15,25 @@ int main(){
 	
 
 	// load example instruction into ROM
-	mem.data[0] = LDA_IM;
-	mem.data[1] = 0xAD;
-	// 2
-	mem.data[2] = AND_IM;
-	mem.data[3] = 0x0F;
-	// 2
-	mem.data[4] = STA_ABY;
-	mem.data[5] = 0xA9;
-	mem.data[6] = 0x00;
-	// 5 cycles
+	mem.data[0] = JSR;
+	mem.data[1] = 0x55;
+	mem.data[2] = 0x00;
+	mem.data[3] = LDA_IM;
+	mem.data[4] = 0x69;
+	mem.data[0x0055] = JSR;
+	mem.data[0x0056] = 0x11;
+	mem.data[0x0057] = 0x00;
+	mem.data[0x0011] = RTS;
+	mem.data[0x0058] = RTS;
+	mem.data[5] = LDX_IM;
+	mem.data[6] = 0xAD;
 
-	mem.data[7] = LDY_IM;
-	mem.data[8] = 0x69;
-	// 2
+	// 6
+
 	
 
 
-
-
-
-
-
-
-	cpu.cycles = 11;
+	cpu.cycles = 28;
 	execute();
 
 	// output status
@@ -46,6 +41,9 @@ int main(){
 
 	// output zero page contents
 	output_zero_page();
+
+	// output statck
+	output_page(0x0100);
 
 
 
@@ -85,11 +83,11 @@ void execute(){
 	// variable to hold previous memory values for immediate instructions
 	unsigned char mem_val;
 
-	// New Instructions were breaking things, adding this until all the instructions are in
-	int x = 1;
+	// // New Instructions were breaking things, adding this until all the instructions are in
+	// int x = 1;
 
 	// execute as many cycles as inputted
-	while(x == 1){
+	while(cpu.cycles > 0){
 
 		// added to aid in multi-instruction basic programs:
 		printf("Current Instruction: %x | Cycles remaining: %d\n", mem.data[cpu.PC], cpu.cycles);
@@ -169,8 +167,10 @@ void execute(){
 			case LDA_INY: // 5 cycles (6 if page boundary is crossed...)
 				zp_addr = zero_page_addr();
 				eff_addr = read_word(zp_addr);
+				printf("eff addr: %x\n", eff_addr);
 				cpu.A = read_byte(eff_addr + (cpu.Y));
 				// check if page boundary was crossed
+				printf("Address: %x\n", (eff_addr + (cpu.Y)) - eff_addr);
 				if((eff_addr + (cpu.Y)) - eff_addr >= 0xFF){
 					cpu.cycles--;
 				}
@@ -311,14 +311,15 @@ void execute(){
 				break;
 
 			case STA_INX: // 6 cycles
-				zp_addr = zero_page_addr();
+			// 1 from fetch
+				zp_addr = zero_page_addr(); // 2
 				zp_addr += cpu.X;
-				cpu.cycles--;
-				eff_addr = read_word(zp_addr);
-				write_byte(eff_addr, (cpu.A));				
+				cpu.cycles--; // 3
+				eff_addr = read_word(zp_addr); // 4, 5
+				write_byte(eff_addr, (cpu.A)); // 6				
 				break;
 
-			case STA_INY: // 6 cycles
+			case STA_INY: // 6 cycles // need to fix
 				zp_addr = zero_page_addr();
 				zp_addr += cpu.Y;
 				cpu.cycles--;
@@ -657,14 +658,21 @@ void execute(){
 
 		// Jump Instructions:
 			case JSR: // 6 cycles (uses Absolute addressing mode)
-				abs_addr = absolute_addr();
+				// 1 cycle for fetch
+				abs_addr = absolute_addr(); // 2, 3
 				// push address (-1) of the return point onto stack
-				write_word( 0x0100 | (cpu.SP), (cpu.PC - 1));
-				// increment stack pointer
-				cpu.SP--;
+				printf("PC getting pushed: %x\n", (cpu.PC) - 1);
+				push_word_to_stack((cpu.PC - 1)); // 4, 5
 				// update program counter with subroutine address (what is being jumped to...)
 				cpu.PC = abs_addr;
-				cpu.cycles--;
+				cpu.cycles--; // 6
+				break;
+
+			case RTS: // 6 cycles
+				cpu.PC = pop_word_from_stack();
+				printf("PC: %x\n", cpu.PC);
+				cpu.cycles -= 2;
+				cpu.PC++;
 				break;
 
 			default:
@@ -933,6 +941,28 @@ unsigned short absolute_Y_addr(){
 	// check if page boundary was crossed
 	return (abs_addr + (cpu.Y));
 }
+
+// Stack Operations:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// pushes value to stack
+void push_word_to_stack(unsigned short data){
+	write_word( 0x0100 | ((cpu.SP)), data);
+	cpu.SP -= 2;
+}
+
+// pops value off of stack
+unsigned short pop_word_from_stack(){
+	unsigned char addr =  mem.data[ 0x0100 | ((cpu.SP) + 1)] << 8;
+	cpu.cycles--;
+	addr |= mem.data[ 0x0100 | ((cpu.SP) + 2)]; 
+	cpu.cycles--;
+	printf("getting value at: %x\n", 0x0100 | ((cpu.SP) + 1));
+	cpu.SP += 2;
+	cpu.cycles--;
+	return addr;
+}
+
+
 
 
 

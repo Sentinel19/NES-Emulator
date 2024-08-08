@@ -96,17 +96,22 @@
 #define BIT_ZP	0x24 // zero page
 #define BIT_AB	0x2C // absolute
 
+// Return from Subroutine
+#define RTS 	0x60 // implied
+
 // Jump to Subroutine
-#define JSR 	0x20// absolute
+#define JSR 	0x20 // absolute
 
 // Status Flag Changes
-#define	CLC		0x18
-#define CLD		0xD8
-#define CLI		0x58
-#define CLV		0xB8
-#define SEC		0x38
-#define SED		0xF8
-#define SEI		0x78
+#define	CLC		0x18 // implied
+#define CLD		0xD8 // implied
+#define CLI		0x58 // implied
+#define CLV		0xB8 // implied
+#define SEC		0x38 // implied
+#define SED		0xF8 // implied
+#define SEI		0x78 // implied
+
+
 
 // CPU constants
 
@@ -162,6 +167,11 @@ unsigned short zero_page_Y_addr(void);
 unsigned short absolute_addr(void);
 unsigned short absolute_X_addr(void);
 unsigned short absolute_Y_addr(void);
+
+// Stack Operations:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void push_word_to_stack(unsigned short data);
+unsigned short pop_word_from_stack(void);
 
 // General byte and word writing:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
