@@ -92,6 +92,11 @@
 #define ORA_INX	0x01 // indirect X
 #define ORA_INY	0x11 // indirect Y
 
+// Rotate Right
+#define ROR_ACC 0x6A // accumulator
+#define ROR_ZP  0x66 // zero page
+
+
 // Logical Bit Test
 #define BIT_ZP	0x24 // zero page
 #define BIT_AB	0x2C // absolute

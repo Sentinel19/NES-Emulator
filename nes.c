@@ -15,25 +15,17 @@ int main(){
 	
 
 	// load example instruction into ROM
-	mem.data[0] = JSR;
-	mem.data[1] = 0x55;
-	mem.data[2] = 0x00;
-	mem.data[3] = LDA_IM;
-	mem.data[4] = 0x69;
-	mem.data[0x0055] = JSR;
-	mem.data[0x0056] = 0x11;
-	mem.data[0x0057] = 0x00;
-	mem.data[0x0011] = RTS;
-	mem.data[0x0058] = RTS;
-	mem.data[5] = LDX_IM;
-	mem.data[6] = 0xAD;
+	mem.data[0] = ROR_ZP;
+	mem.data[1] = 0x42;
+	mem.data[0x42] = 0x01;
+	// 5
+	
 
-	// 6
 
 	
 
 
-	cpu.cycles = 28;
+	cpu.cycles = 5;
 	execute();
 
 	// output status
@@ -656,7 +648,32 @@ void execute(){
 				break;
 
 
-		// Jump Instructions:
+		// Shifting Operations: (untested)
+			case ROR_ACC:	// 2 cycles
+				// contents of carry = old 0th bit
+				cpu.SR |= (cpu.A & 0x01);
+				// bit 7 = old carry flag
+				cpu.A |= (cpu.SR & 0x01) << 7;
+				cpu.A = (cpu.A) >> 1;
+				nz_set_status(cpu.A);
+				cpu.cycles--;
+				break;
+
+			case ROR_ZP:    // 5 cycles
+				zp_addr = zero_page_addr();
+				mem_val = read_byte(zp_addr);
+				cpu.SR |= (mem_val & 0x01);
+				// bit 7 = old carry flag
+				mem_val |= (cpu.SR & 0x01) << 7;
+				mem_val = (mem_val) >> 1;
+				nz_set_status(mem_val);
+				cpu.cycles--;
+				printf("Addr: %x Data: %x\n", zp_addr, mem_val);
+				write_byte(zp_addr, mem_val);
+				break;
+
+
+		// Jump Instructions: // unsure about this being cycle accurate or working exactly right
 			case JSR: // 6 cycles (uses Absolute addressing mode)
 				// 1 cycle for fetch
 				abs_addr = absolute_addr(); // 2, 3
@@ -668,7 +685,7 @@ void execute(){
 				cpu.cycles--; // 6
 				break;
 
-			case RTS: // 6 cycles
+			case RTS: // 6 cycles // unsure about this being cycle accurate or working exactly right
 				cpu.PC = pop_word_from_stack();
 				printf("PC: %x\n", cpu.PC);
 				cpu.cycles -= 2;
@@ -677,7 +694,7 @@ void execute(){
 
 			default:
 				printf("Instruction: $%hhx not handled yet\n\n", instruction);
-				x = 0;
+				//x = 0;
 				break;
 
 		// Status Flag Instruction
